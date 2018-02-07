@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <script type="text/javascript" src="/javascripts/download.js"></script>
+    <!-- <script type="text/javascript" src='/javascripts/tanzhen.js'></script> -->
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+
+    <script type="text/javascript" src="http://weixin.singworld.cn/web_frontend/js/lib/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="http://weixin.singworld.net/web_frontend/css/min/record.css?t=48ba2b4961fc550d3335">
+  </head>
+  <body>
+    <h1><%= title %></h1>
+	<ul id="img-list">
+		<li><a href="#/aaa">aaa</a></li>
+		<li><a href="#/bbb">bbb</a></li>
+	</ul>
+    <p>Welcome to <%= title %></p>
+	<img src="/images/mida_log.jpg">
+	<img src="/images/mida_logo.jpg"><br>
+	<button id="ajaxcallBtn">ajax请求触发</button>
+	<button id="ajaxcallBtn2">ajax错误1请求触发</button>
+	<button id="ajaxcallBtn3">ajax错误2请求触发</button>
+	<button id="errBtn">脚本错误触发</button>
+	<button id="errBtn2">脚本错误触发2</button>
+	<script type="text/javascript">
+		$(function() {
+			var ajaxcall = function(url) {
+				$.ajax({
+					type: 'GET',
+					url: url,
+					success: function(data) {
+					},
+					error: function(er) {
+					}
+				})	
+			}
+			var dd = 55;
+			var errfn = function() {
+				return dd();
+			}
+			ajaxcall();
+			document.querySelector('#ajaxcallBtn').onclick = function() {
+				ajaxcall('/logger');
+			}
+			document.querySelector('#ajaxcallBtn2').onclick = function() {
+				ajaxcall('/api/error');
+			}
+			document.querySelector('#ajaxcallBtn3').onclick = function() {
+				ajaxcall('/api/error2');
+			}
+			document.querySelector('#errBtn').onclick = function() {
+				console.log('d is:', d);
+			}
+			document.querySelector('#errBtn2').onclick = function() {
+				errfn()
+			}
+			var a = b + c;
+		})
+	</script>
+  </body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>statistics page</title>
+	<script type="text/javascript">
+'use strict';
+
+(function () {
+	var API = '/api/statis';
+
+	var log = function log(msg) {
+		var s = [];
+		for (var key in msg) {
+			s.push(key + '=' + msg[key]);
+		}
+		s = s.join('&');
+		console.error('log message:', msg
+			//new Image().src = API + encodeURIComponent(s)
+		);
+	};
+	window.onerror = function (message, url, line, col, error) {
+		if (message != "Script error." && !url) return;
+
+		setTimeout(function () {
+			var msg = {};
+			col = col || window.event && window.event.errorCharacter || 0;
+			msg.ua = window.navigator.userAgent;
+			msg.message = message;
+			msg.url = url;
+			msg.line = line;
+			msg.page = window.location.href;
+
+			if (!!error && !!error.stack) {
+				msg.stack = error.stack.toString();
+			} else if (!!arguments.callee) {
+				var ext = [];
+				var f = arguments.callee.caller,
+				    c = 3;
+
+				while (f && --c > 0) {
+					ext.push(f.toString());
+					if (f === f.caller) {
+						break;
+					}
+					f = f.caller;
+				}
+				ext = ext.join(",");
+				msg.stack = ext;
+			}
+
+			log(msg);
+		}, 0);
+
+		return true;
+	};
+
+	/***************************************************************************/
+
+	(function () {
+		if (typeof window.CustomEvent === "function") return false;
+
+		function CustomEvent(event, params) {
+			params = params || { bubbles: false, cancelable: false, detail: undefined };
+			var evt = document.createEvent('CustomEvent');
+			evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+			return evt;
+		}
+
+		CustomEvent.prototype = window.Event.prototype;
+
+		window.CustomEvent = CustomEvent;
+	})();
+
+	(function () {
+		function ajaxEventTrigger(event) {
+			var ajaxEvent = new CustomEvent(event, { detail: this });
+			window.dispatchEvent(ajaxEvent);
+		}
+
+		var oldXHR = window.XMLHttpRequest;
+
+		function newXHR() {
+			var realXHR = new oldXHR();
+
+			realXHR.addEventListener('abort', function () {
+				ajaxEventTrigger.call(this, 'ajaxAbort');
+			}, false);
+
+			realXHR.addEventListener('error', function () {
+				ajaxEventTrigger.call(this, 'ajaxError');
+			}, false);
+
+			realXHR.addEventListener('load', function () {
+				ajaxEventTrigger.call(this, 'ajaxLoad');
+			}, false);
+
+			realXHR.addEventListener('loadstart', function () {
+				ajaxEventTrigger.call(this, 'ajaxLoadStart');
+			}, false);
+
+			realXHR.addEventListener('progress', function () {
+				ajaxEventTrigger.call(this, 'ajaxProgress');
+			}, false);
+
+			realXHR.addEventListener('timeout', function () {
+				ajaxEventTrigger.call(this, 'ajaxTimeout');
+			}, false);
+
+			realXHR.addEventListener('loadend', function () {
+				ajaxEventTrigger.call(this, 'ajaxLoadEnd');
+			}, false);
+
+			realXHR.addEventListener('readystatechange', function () {
+				ajaxEventTrigger.call(this, 'ajaxReadyStateChange');
+			}, false);
+
+			return realXHR;
+		}
+
+		window.XMLHttpRequest = newXHR;
+
+		window.addEventListener('ajaxReadyStateChange', function (e) {
+			var proxy = e.detail;
+			if (proxy.readyState == 4) {
+				var msg = {
+					status: proxy.status,
+					responseURL: proxy.responseURL,
+					statusText: proxy.statusText,
+					timeout: proxy.timeout,
+					contentType: proxy.getResponseHeader('Content-Type'),
+					date: proxy.getResponseHeader('Date')
+				};
+				log(msg);
+			}
+		});
+		window.addEventListener('ajaxAbort', function (e) {
+			console.error('ajax abort data:', e);
+		});
+		window.addEventListener('ajaxLoadStart', function (e) {
+			console.error('ajax load start:', e);
+		});
+		window.addEventListener('ajaxLoadEnd', function (e) {
+			console.error('ajax load end:', e);
+		});
+	})();
+
+	/*********************************************************************/
+	if (!('performance' in window) || !('getEntriesByType' in window.performance) || !(window.performance.getEntriesByType('resource') instanceof Array)) {
+		console.log('your browser not support performance API');
+	} else {
+		window.addEventListener('load', function () {
+			var t = performance.timing;
+			//页面加载的耗时、
+			var pageloadtime = t.loadEventStart - t.navigationStart;
+			//域名解析的耗时、
+			var dns = t.domainLookupEnd - t.domainLookupStart;
+			//TCP连接的耗时、
+			var tcp = t.connectEnd - t.connectStart;
+			//读取页面第一个字节之前的耗时
+			var ttfb = t.responseStart - t.navigationStart;
+
+			var resources = window.performance.getEntriesByType('resource');
+			console.log('resources is:', resources.length)
+			for (var obj = 0; obj < resources.length; obj++) {console.log('obj is:', obj)
+				var type = resources[obj].initiatorType;
+				console.log(resources[obj].toJSON())
+				if (type === 'script' || type === 'link' || type === 'xmlhttprequest') {
+					var list = '';
+					for (var properties in resources[obj]) {
+						list += '<li>' + properties + ': <span class="value">' + resources[obj][properties] + '</span></li>';
+					}
+					document.getElementById('img-list').innerHTML = list;
+				}
+			}
+		});
+	}
+})();
+	</script>
+	<script type="text/javascript" src="http://static01.weixin.singworld.cn/web_frontend/js/lib/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="http://weixin.singworld.net/web_frontend/css/min/record.css?t=48ba2b4961fc550d3335">
+</head>
+<body>
+<button>ajax call</button>
+<button>function call</button>
+<img src="http://www.sitepoint.com/wp-content/themes/sitepoint/assets/svg/sitepoint.svg" />
+<img src="http://pre.weixin.singworld.cn/web_frontend/images/loading.gif">
+<ul id="img-list">
+</ul>
+<script type="text/javascript">
+	$(function() {
+		$.ajax({
+			type: 'GET',
+			url: '/api/login/?uid=646608',
+			success: function(data) {
+			},
+			error: function(er) {
+			}
+		})
+
+		var c = a + b;
+	})
+</script>
+</body>
+</html>
+
